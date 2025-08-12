@@ -102,7 +102,7 @@ char **command_line_to_av(char *line)
  */
 int main(void)
 {
-	char **av = command_line_to_av("ls -l /home/user dih dfhg rivios rghiog\nrgohigf goihrgf\tdsiohg fdfhiosg dshio");
+	char **av = command_line_to_av("ls -l home/user rghiog\nrgohigf\tdsiohg");
 	int i = 0;
 
 	if (!av)

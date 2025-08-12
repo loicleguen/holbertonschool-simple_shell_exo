@@ -1,54 +1,102 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
-#include <sys/types.h>
 #include <sys/wait.h>
 
-/**
- * main - Simple shell
- *
- * Return: Always 0.
- */
+#define MAX_ARGS 64
+#define PROMPT "#cisfun$ "
 
-int main(void)
-{	char *line = NULL;
-	size_t len = 0;
-	ssize_t nread;
+/**
+ * read_line - Displays prompt and reads input
+ * @line: pointer to buffer
+ * @len: pointer to buffer size
+ *
+ * Return: number of characters read, -1 on EOF/error
+ */
+ssize_t read_line(char **line, size_t *len)
+{
+	printf(PROMPT);
+	fflush(stdout);
+	return (getline(line, len, stdin));
+}
+
+/**
+ * parse_line - Splits a command line into arguments
+ * @line: command line string
+ * @argv: array to store arguments
+ */
+void parse_line(char *line, char *argv[])
+{
+	char *token;
+	int i = 0;
+
+	if (line[strlen(line) - 1] == '\n')
+		line[strlen(line) - 1] = '\0';
+
+	token = strtok(line, " ");
+	while (token != NULL && i < MAX_ARGS - 1)
+	{
+		argv[i++] = token;
+		token = strtok(NULL, " ");
+	}
+	argv[i] = NULL;
+}
+
+/**
+ * execute_command - Forks and runs a command
+ * @argv: array of arguments
+ */
+void execute_command(char *argv[])
+{
 	pid_t child_pid;
 	int status;
 
-	while (1)
-	{	printf("#cisfun$ ");
-		fflush(stdout);
-		nread = getline(&line, &len, stdin);
+	child_pid = fork();
+	if (child_pid == -1)
+	{
+		perror("fork");
+		return;
+	}
+	if (child_pid == 0)
+	{
+		execvp(argv[0], argv);
+		perror("execvp");
+		_exit(1);
+	}
+	else
+	{
+		wait(&status);
+	}
+}
 
-		if (nread == -1) /* EOF ou erreur */
-		{	printf("\n");
+/**
+ * main - Entry point of the shell
+ *
+ * Return: Always 0
+ */
+int main(void)
+{
+	char *line = NULL;
+	size_t len = 0;
+	ssize_t nread;
+	char *argv[MAX_ARGS];
+
+	while (1)
+	{
+		nread = read_line(&line, &len);
+		if (nread == -1)
+		{
+			printf("\n");
 			break;
 		}
-		/* Retirer le '\n' final de la commande */
-		if (line[nread - 1] == '\n')
-			line[nread - 1] = '\0';
 
-		child_pid = fork();
-		if (child_pid == -1)
-		{	perror("fork");
-			free(line);
-			exit(EXIT_FAILURE);
-		}
+		parse_line(line, argv);
 
-		if (child_pid == 0) /* Code enfant */
-		{	char *argv[] = {line, NULL}; /* full path sans argument */
+		if (argv[0] == NULL) /* Empty input */
+			continue;
 
-			execve(argv[0], argv, NULL);
-			perror("execve"); /* S’exécute seulement si execve échoue */
-			_exit(EXIT_FAILURE);
-		}
-		else /* Code père */
-		{
-			if (wait(&status) == -1)
-				perror("wait");
-		}
+		execute_command(argv);
 	}
 
 	free(line);

@@ -26,8 +26,8 @@ int main(void)
 		{	printf("\n");
 			break;
 		}
-
-		if (line[nread - 1] == '\n')/* Retirer le '\n' final de la commande */
+		/* Retirer le '\n' final de la commande */
+		if (line[nread - 1] == '\n')
 			line[nread - 1] = '\0';
 
 		child_pid = fork();

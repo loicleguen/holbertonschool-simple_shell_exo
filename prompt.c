@@ -26,7 +26,7 @@ int main(void)
 		fflush(stdout);
 	}
 	if (feof(stdin))
-		printf("\n");
+		printf("EOF\n");
 
 	free(line);
 	return (0);
